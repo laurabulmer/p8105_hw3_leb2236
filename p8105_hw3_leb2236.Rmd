@@ -35,6 +35,11 @@ data("ny_noaa")
 
 ## Problem 2
 
+## Delete this code
+```{r}
+part_testing = read_csv(file = "./data/nhanes_covar.csv")
+```
+
 First, the below code is used to load and tidy the datasets related to accelerometers and the participants. 
 
 ```{r load and tidy participants}
@@ -77,5 +82,44 @@ Next, I am joining my two datasets.
 ```{r}
 accel_df = left_join(participants_clean, accelerometer, by = 'seqn')
 ```
+
+Next I am creating a table for the number of men and women in each education category.
+
+```{r}
+accel_df %>%
+  mutate(
+    sex = recode(sex, `1` = "Male", `2` = "Female"),
+    education = recode(education, 
+                       `1` = "Less than High School", 
+                       `2` = "High School Equivalent", 
+                       `3` = "More than High School")
+    )%>%
+group_by(education, sex) %>%
+  summarize(count_sex = n()) %>%
+  pivot_wider(
+    names_from = education,
+    values_from = count_sex
+  )%>%
+knitr::kable()
+```
+
+```{r}
+accel_df %>%
+  mutate(
+    sex = recode(sex, `1` = "Male", `2` = "Female"),
+    education = recode(education, 
+                       `1` = "Less than High School", 
+                       `2` = "High School Equivalent", 
+                       `3` = "More than High School")
+    )%>%
+group_by(education, sex) %>%
+  summarize(count_education = n()) %>%
+  pivot_wider(
+    names_from = sex,
+    values_from = count_education
+  )%>%
+knitr::kable()
+```
+
 
 

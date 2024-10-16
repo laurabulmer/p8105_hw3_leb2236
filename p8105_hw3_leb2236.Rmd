@@ -119,11 +119,35 @@ accel_df = accel_df %>%
 accel_df%>%
   ggplot(aes(x = age, y = total_act, color = sex)) +
     geom_point() +  
-    geom_smooth(method = "lm", se = FALSE) +
+    geom_smooth(se = FALSE) +
     facet_wrap(~ education) + 
     labs(title = "Total Activity by Age and Education Level",
          x = "Age",
          y = "Total Activity",
          color = "Sex")
+```
+
+INSERT COMMENTS ON THE PLOT ABOVE HERE
+
+Next I am creating a three-panel plot that shows the 24 hour activity time courses for each education level. Sex is labeled using color. 
+
+```{r}
+accel_df_long = accel_df %>%
+  pivot_longer(
+    cols = starts_with("min"),
+    names_to = "minute",
+    values_to = "mims",
+    names_prefix = "min"
+  ) %>%
+  mutate(minute = as.numeric(minute))
+
+accel_df_long %>%
+  ggplot(aes(x=minute, y = mims, color = sex))+
+  geom_smooth(se=FALSE)+
+  facet_wrap(.~education, ncol = 1)+
+  labs(title = "24-hour Activity Time Courses for Education Levels by Sex",
+       x = "Minutes",
+       y = "Activity Level (MIMS)",
+       color = "Sex")
 ```
 

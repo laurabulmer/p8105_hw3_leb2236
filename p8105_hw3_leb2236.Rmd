@@ -178,3 +178,39 @@ str(july_2020)
 str(july_2024)
 ```
 
+Next I am going to merge my four datasets. Since the variables are the same across all datasets, I am going to bind the rows. I am adding a year and month variable so that I don't lose this information in the combined dataset.
+
+```{r}
+citi_df = bind_rows(
+  jan_2020 %>%
+    mutate(month = "January", year = "2020"), 
+  july_2020 %>%
+    mutate(month = "July", year = "2020"), 
+  jan_2024 %>%
+    mutate(month = "January", year = "2024"), 
+  july_2024%>%
+    mutate(month = "July", year = "2024")
+  )
+```
+
+INSERT DESCRIPTION OF THE DATA SET HERE
+
+Next I am creating a table to show the total number of rides in January and July of 2020 and 2024, for both casual riders and Citi Bike members.
+
+```{r}
+citi_df%>%
+  mutate(
+    member_casual = recode(member_casual, 
+                           'member' = 'Citi Bike Member', 
+                           'casual' = 'Casual Rider'),
+    Timeframe = paste(month, year)
+  )%>%
+  group_by (member_casual,Timeframe) %>%
+  summarize(total_obs = n())%>%
+  pivot_wider(
+    names_from = member_casual,
+    values_from = total_obs
+  )%>%
+  knitr::kable()
+```
+

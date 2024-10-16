@@ -75,7 +75,7 @@ participants_clean = participants %>%
 Next, I am joining my two datasets. 
 
 ```{r}
-
+accel_df = left_join(participants_clean, accelerometer, by = 'seqn')
 ```
 
 

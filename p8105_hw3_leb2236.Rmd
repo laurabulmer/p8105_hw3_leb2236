@@ -214,3 +214,19 @@ citi_df%>%
   knitr::kable()
 ```
 
+INSERT COMMENTS HERE ON THE TABLE ABOVE
+
+Next, I am making a table showing the 5 most popular starting stations for July 2024, inclusive of the number of rides originating from these stations.
+
+```{r}
+july_2024 %>%
+  group_by(start_station_name)%>%
+  summarize(
+    start_count=n()
+  )%>%
+  arrange(desc(start_count))%>%
+  head(5)%>%
+  rename('Starting Station' = start_station_name, 'Number of Rides' = start_count)%>%
+  knitr::kable()
+```
+

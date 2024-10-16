@@ -1,0 +1,81 @@
+---
+title: "Homework 3"
+author: Laura Bulmer
+date: 10/16/2024
+output: github_document
+---
+```{r}
+library(p8105.datasets)
+library(tidyverse)
+library(ggridges)
+library(patchwork)
+
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+
+theme_set(theme_minimal() + theme(legend.position = "bottom"))
+
+options(
+  ggplot2.continuous.colour = "viridis",
+  ggplot2.continuous.fill = "viridis"
+)
+
+scale_colour_discrete = scale_colour_viridis_d
+scale_fill_discrete = scale_fill_viridis_d
+```
+
+## Problem 1
+
+```{r loading dataset}
+data("ny_noaa")
+```
+
+## Problem 2
+
+First, the below code is used to load and tidy the datasets related to accelerometers and the participants. 
+
+```{r load and tidy participants}
+participants = 
+  read_csv(file = "./data/nhanes_covar.csv", 
+           skip = 4,
+           na = c(".", "NA", ""),
+           col_types = cols(
+             'SEQN' = col_character(),
+             'sex' = col_factor(),
+             'age' = col_integer(),
+             'BMI' = col_double(),
+             'education' = col_factor()
+           ))
+
+participants = janitor::clean_names(participants)
+```
+
+
+```{r load and tidy accelerometer}
+accelerometer = read_csv(file = "./data/nhanes_accel.csv",
+                         na = c(".", "NA", ""),
+                         col_types = cols(
+                           'SEQN' = col_character()
+                         )
+                         )
+accelerometer = janitor::clean_names(accelerometer)
+```
+
+Next I am sub-setting participants data to drop missing observations and exclude participants less than 21.
+
+```{r }
+participants_clean = participants %>%
+  drop_na() %>%
+  filter(age > 20)
+```
+
+Next, I am joining my two datasets. 
+
+```{r}
+
+```
+
+

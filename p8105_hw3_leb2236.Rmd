@@ -35,11 +35,6 @@ data("ny_noaa")
 
 ## Problem 2
 
-## Delete this code
-```{r}
-part_testing = read_csv(file = "./data/nhanes_covar.csv")
-```
-
 First, the below code is used to load and tidy the datasets related to accelerometers and the participants. 
 
 ```{r load and tidy participants}
@@ -95,24 +90,6 @@ accel_df %>%
                        `3` = "More than High School")
     )%>%
 group_by(education, sex) %>%
-  summarize(count_sex = n()) %>%
-  pivot_wider(
-    names_from = education,
-    values_from = count_sex
-  )%>%
-knitr::kable()
-```
-
-```{r}
-accel_df %>%
-  mutate(
-    sex = recode(sex, `1` = "Male", `2` = "Female"),
-    education = recode(education, 
-                       `1` = "Less than High School", 
-                       `2` = "High School Equivalent", 
-                       `3` = "More than High School")
-    )%>%
-group_by(education, sex) %>%
   summarize(count_education = n()) %>%
   pivot_wider(
     names_from = sex,
@@ -121,5 +98,32 @@ group_by(education, sex) %>%
 knitr::kable()
 ```
 
+```{r}
+accel_df %>%
+  ggplot(aes(x = education, y = age, fill = sex))+
+  geom_boxplot()+
+  labs(title = "Age Distribution of Men and Women by Education Category",
+       x = "Education Category",
+       y = "Age")
+```
 
+
+INSERT COMMENTS ON THE TABLE AND PLOT ABOVE HERE
+
+Next I am aggregating and plotting total activity.
+
+```{r}
+accel_df = accel_df %>%
+  mutate(total_act = rowSums(select(., min1:min1440), na.rm = TRUE))
+
+accel_df%>%
+  ggplot(aes(x = age, y = total_act, color = sex)) +
+    geom_point() +  
+    geom_smooth(method = "lm", se = FALSE) +
+    facet_wrap(~ education) + 
+    labs(title = "Total Activity by Age and Education Level",
+         x = "Age",
+         y = "Total Activity",
+         color = "Sex")
+```
 

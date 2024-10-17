@@ -329,10 +329,13 @@ july_2024 %>%
   knitr::kable()
 ```
 
+#### Creating a plot for median ride duration
 
 Next I am going to make a plot to investigate the effects of day of the week, month, and year on median ride duration. 
 
 ```{r}
+# creating a plot to show median ride duration, considering weekday, month, and year
+
 citi_df %>%
   mutate(
     weekdays = factor(weekdays, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
@@ -345,9 +348,34 @@ citi_df %>%
   labs(
     title = "Median Ride Duration by Weekday, Month, and Year",
     x = "Day of Week",
-    y = "Median Ride Duration (minutes)"
+    y = "Median Ride Duration (minutes)",
+    fill = "Year"
   )
 ```
 
+This plot demonstrates that on all days of the week and in both 2020 and 2024, ridership was higher in July compared to January. The average duration of rides in general was higher in 2020 compared to 2024. In January for both 2020 and 2024, the median duration of rides on all days of the week was fairly consistent, with a minor increase on weekend dates. In July of both 2020 and 2024 however, there was an increase in median ride duration on the weekends compared to other days of the week.
 
+#### Plotting the distribution of ride duration
+
+Next, I am going to plot the distribution of ride duration in 2024. I am creating multiple panels so the data can be split by month, membership status, and bike type.
+
+```{r}
+# plotting ride duration in 2024 considering month, membership status, and bike type
+
+citi_df %>%
+  filter (year == '2024')%>%
+  drop_na(rideable_type, duration, member_casual, month) %>%
+  ggplot(aes(x=rideable_type,y = duration, fill = member_casual))+
+  geom_boxplot(outlier.alpha=.2)+
+  facet_wrap(.~month, ncol=1)+
+  scale_y_continuous(limits = c(0, 50))+
+  labs(
+    title = "Distribution of Ride Duration in 2024",
+    x = "Bike Type",
+    y = "Ride Duration (minutes)",
+    fill = "Membership Status"
+  )
+```
+
+From this figure, we can see that in both January and July 2024, the average ride duration for members was lower comparative to casual riders. There does not appear to be a large difference in the distribution of ride duration when comparing classic bikes to electric bikes. The distribution of ride duration for casual riders appears to be more spread out compared to members. Also, its important to note that the y-axes on this figure were limited to make the figure more reasonable, however there were data points that appear beyond the scale of the plots. 
 

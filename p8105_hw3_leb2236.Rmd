@@ -4,7 +4,10 @@ author: Laura Bulmer
 date: 10/16/2024
 output: github_document
 ---
-```{r}
+
+Before starting on the problems, I'm setting up my libraries and options for visuals. 
+
+```{r setting up}
 library(p8105.datasets)
 library(tidyverse)
 library(ggridges)
@@ -35,9 +38,13 @@ data("ny_noaa")
 
 ## Problem 2
 
-First, the below code is used to load and tidy the datasets related to accelerometers and the participants. 
+#### Importing, cleaning, and joining the data
+
+First, the below code is used to load and tidy the datasets related to accelerometers and the participants. I am sub-setting participants data to drop missing observations and exclude participants less than 21. Then, I will join the two datasets.
 
 ```{r load and tidy participants}
+# loading the tidying the data for participants
+
 participants = 
   read_csv(file = "./data/nhanes_covar.csv", 
            skip = 4,
@@ -53,8 +60,9 @@ participants =
 participants = janitor::clean_names(participants)
 ```
 
-
 ```{r load and tidy accelerometer}
+# loading and tidying the data for accelerometer
+
 accelerometer = read_csv(file = "./data/nhanes_accel.csv",
                          na = c(".", "NA", ""),
                          col_types = cols(
@@ -64,30 +72,38 @@ accelerometer = read_csv(file = "./data/nhanes_accel.csv",
 accelerometer = janitor::clean_names(accelerometer)
 ```
 
-Next I am sub-setting participants data to drop missing observations and exclude participants less than 21.
-
 ```{r }
+# dropping participants observations with missing data and those under 21
+
 participants_clean = participants %>%
   drop_na() %>%
   filter(age > 20)
 ```
 
-Next, I am joining my two datasets. 
-
 ```{r}
+# joining the participants and accelerometer dataframes
+
 accel_df = left_join(participants_clean, accelerometer, by = 'seqn')
 ```
 
-Next I am creating a table for the number of men and women in each education category.
+#### Analysis on age distribution, gender, and education level of particpants
+
+Next, I am creating a table for the number of men and women in each education category and a visualization of the age distribution within each education category.
 
 ```{r}
+# creating the table of education level by gender
+
 accel_df %>%
   mutate(
     sex = recode(sex, `1` = "Male", `2` = "Female"),
     education = recode(education, 
                        `1` = "Less than High School", 
                        `2` = "High School Equivalent", 
-                       `3` = "More than High School")
+                       `3` = "More than High School"),
+    education = factor(education, 
+                       levels = c("Less than High School", 
+                                  "High School Equivalent", 
+                                  "More than High School"))
     )%>%
 group_by(education, sex) %>%
   summarize(count_education = n()) %>%
@@ -95,43 +111,76 @@ group_by(education, sex) %>%
     names_from = sex,
     values_from = count_education
   )%>%
+  rename('Education Level' = education)%>%
 knitr::kable()
 ```
 
+From our table, there appears to be a reasonably even distribution of men and women in the education categories of 'less than high school' and 'more than high school', however there are significantly more men than women in the 'high school equivalent' category. Overall, there are more total participants in the 'more than high school' category compared to the other two categories.
+
 ```{r}
+# creating a boxplot to show age distribution for each education category
 accel_df %>%
+  mutate(
+    sex = recode(sex, `1` = "Male", `2` = "Female"),
+    education = recode(education, 
+                       `1` = "Less than High School", 
+                       `2` = "High School Equivalent", 
+                       `3` = "More than High School"),
+    education = factor(education, 
+                       levels = c("Less than High School", 
+                                  "High School Equivalent", 
+                                  "More than High School"))
+    )%>%
   ggplot(aes(x = education, y = age, fill = sex))+
   geom_boxplot()+
   labs(title = "Age Distribution of Men and Women by Education Category",
-       x = "Education Category",
+       x = "Education Level",
        y = "Age")
 ```
 
+From the box plots, we can further analyze the distribution of age for each gender within each education category. The distribution of age is less spread out among those in the 'less than high school' category when compared to the other two categories. The average age for both men and women in the 'more than high school' category is much lower comparative to the other two two categories of education.
 
-INSERT COMMENTS ON THE TABLE AND PLOT ABOVE HERE
+#### Calculating and plotting total activity
 
-Next I am aggregating and plotting total activity.
+Next, I am aggregating and plotting total activity.
 
 ```{r}
+# creating total_act variable and plotting
+
 accel_df = accel_df %>%
   mutate(total_act = rowSums(select(., min1:min1440), na.rm = TRUE))
 
 accel_df%>%
+  mutate(
+    sex = recode(sex, `1` = "Male", `2` = "Female"),
+    education = recode(education, 
+                       `1` = "Less than High School", 
+                       `2` = "High School Equivalent", 
+                       `3` = "More than High School"),
+    education = factor(education, 
+                       levels = c("Less than High School", 
+                                  "High School Equivalent", 
+                                  "More than High School"))
+    )%>%
   ggplot(aes(x = age, y = total_act, color = sex)) +
     geom_point() +  
     geom_smooth(se = FALSE) +
     facet_wrap(~ education) + 
-    labs(title = "Total Activity by Age and Education Level",
+    labs(title = "Total Activity by Age, Education Level, and Sex",
          x = "Age",
          y = "Total Activity",
          color = "Sex")
 ```
 
-INSERT COMMENTS ON THE PLOT ABOVE HERE
+From the graph above, it appears that for both the 'high school equivalent' and 'more than high school' education categories, women generally have a higher total activity level than men at all ages. For the 'less than high school' category, women initially have a higher activity level, but men begin to surpass them around age 45-50. 
+
+#### Plotting 24 hour activity time courses
 
 Next I am creating a three-panel plot that shows the 24 hour activity time courses for each education level. Sex is labeled using color. 
 
 ```{r}
+# pivoting my dataframe longer
+
 accel_df_long = accel_df %>%
   pivot_longer(
     cols = starts_with("min"),
@@ -141,21 +190,53 @@ accel_df_long = accel_df %>%
   ) %>%
   mutate(minute = as.numeric(minute))
 
+# creating tick labels for my graph
+
+tick_labels = c(
+  "0" = "00:00",
+  "360" = "06:00",
+  "720" = "12:00",
+  "1080" = "18:00",
+  "1440" = "24:00"
+)
+
+# creating the plot
+
 accel_df_long %>%
+  mutate(
+    sex = recode(sex, `1` = "Male", `2` = "Female"),
+    education = recode(education, 
+                       `1` = "Less than High School", 
+                       `2` = "High School Equivalent", 
+                       `3` = "More than High School"),
+    education = factor(education, 
+                       levels = c("Less than High School", 
+                                  "High School Equivalent", 
+                                  "More than High School"))
+    )%>%
   ggplot(aes(x=minute, y = mims, color = sex))+
   geom_smooth(se=FALSE)+
   facet_wrap(.~education, ncol = 1)+
+  scale_x_continuous(
+    breaks = as.numeric(names(tick_labels)),  # Set specific tick positions
+    labels = tick_labels) +
   labs(title = "24-hour Activity Time Courses for Education Levels by Sex",
-       x = "Minutes",
+       x = "Time of Day (hr)",
        y = "Activity Level (MIMS)",
        color = "Sex")
 ```
 
+From the plot above, it appears that for participants in all education categories, the average activity level is generally low early in the morning and late at night. The average activity levels generally start to rise around 6AM and start to decrease after 6PM. The activity levels for the 'less than high school' category peaks at a slightly higher level compared to the other two categories.
+
 ## Problem 3: Citi Biking
 
-First, I am going to load in my four data files.
+#### Loading, tidying, and merging the data
+
+First, I am going to load in the four data files.
 
 ```{r}
+# loading citi biking data
+
 jan_2020 = read_csv(file="./data/Jan 2020 Citi.csv", show_col_types = FALSE) %>%
   janitor::clean_names()
 
@@ -172,15 +253,19 @@ july_2024 = read_csv(file="./data/July 2024 Citi.csv", show_col_types = FALSE)%>
 Then I am going to check the variable types for each file before merging. I am hiding the results because they are lengthy, but all variable types match across the datasets.
 
 ```{r results = 'hide'}
+# checking variable types
+
 str(jan_2020)
 str(jan_2024)
 str(july_2020)
 str(july_2024)
 ```
 
-Next I am going to merge my four datasets. Since the variables are the same across all datasets, I am going to bind the rows. I am adding a year and month variable so that I don't lose this information in the combined dataset.
+Next I am going to merge my four datasets. Since the variables are the same across all datasets, I am going to bind the rows. 
 
 ```{r}
+# merging the datasets by binding the rows
+
 citi_df = bind_rows(
   jan_2020 %>%
     mutate(month = "January", year = "2020"), 
@@ -191,19 +276,29 @@ citi_df = bind_rows(
   july_2024%>%
     mutate(month = "July", year = "2024")
   )
+
 ```
 
-INSERT DESCRIPTION OF THE DATA SET HERE
+The resulting dataset contains all of the observations for rides in January and July of 2020 and 2024. There are 99485 observations and 9 variables. The 'month' and 'year' variables were added to indicate when each ride occurred. The other variables included in the dataset are ride ID (ride_id), bike type (rideable_type), day of the week (weekdays), duration of ride (duration), starting station (start_station_name), ending station (end_station_name), and member status (member_casual).
+
+#### Creating table of total rides per month of interest
 
 Next I am creating a table to show the total number of rides in January and July of 2020 and 2024, for both casual riders and Citi Bike members.
 
 ```{r}
+# creating the table of total rides in Jan/July in 2020/2024
+
 citi_df%>%
   mutate(
     member_casual = recode(member_casual, 
                            'member' = 'Citi Bike Member', 
                            'casual' = 'Casual Rider'),
-    Timeframe = paste(month, year)
+    Timeframe = paste(month, year),
+    Timeframe = factor(Timeframe, 
+                       levels = c("January 2020", 
+                                  "July 2020", 
+                                  "January 2024",
+                                  "July 2024"))
   )%>%
   group_by (member_casual,Timeframe) %>%
   summarize(total_obs = n())%>%
@@ -214,11 +309,15 @@ citi_df%>%
   knitr::kable()
 ```
 
-INSERT COMMENTS HERE ON THE TABLE ABOVE
+From the table above, it appears that rides for both casual riders and citi bike members are higher in July compared to January in both 2020 and 2024. For all months of interest, more rides were completed by citi bike members compared to casual riders. Generally, the number of rides appears to be increasing over time, with the exception of casual riders in January 2024 compared to July of 2020.
+
+#### Creating a table of popular stations in July 2024
 
 Next, I am making a table showing the 5 most popular starting stations for July 2024, inclusive of the number of rides originating from these stations.
 
 ```{r}
+# Creating a table of the 5 most popular starting stations in July 2024
+
 july_2024 %>%
   group_by(start_station_name)%>%
   summarize(
@@ -229,4 +328,26 @@ july_2024 %>%
   rename('Starting Station' = start_station_name, 'Number of Rides' = start_count)%>%
   knitr::kable()
 ```
+
+
+Next I am going to make a plot to investigate the effects of day of the week, month, and year on median ride duration. 
+
+```{r}
+citi_df %>%
+  mutate(
+    weekdays = factor(weekdays, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+  )%>%
+  group_by (weekdays, month, year)%>%
+  summarize(med_duration = median(duration, na.rm = TRUE))%>%
+  ggplot(aes(x=weekdays, y=med_duration, fill=year))+
+  geom_bar(stat="identity", position='dodge')+
+  facet_wrap(.~month, ncol = 1)+
+  labs(
+    title = "Median Ride Duration by Weekday, Month, and Year",
+    x = "Day of Week",
+    y = "Median Ride Duration (minutes)"
+  )
+```
+
+
 
